@@ -1,2 +1,2 @@
 # SegModel
-AI for Segmentation Tasks
+Codes for Segmentation Tasks
