@@ -71,8 +71,8 @@ class DiceLoss(nn.Module):
 class FocalLoss(nn.Module):
     def __init__(self, alpha=0.25, gamma=2, ignore_index=[]):
         super().__init__()
-        self.alpha = alpha  # 클래스별 가중치 (불균형한 데이터셋 처리에 유용)
-        self.gamma = gamma  # Focal 조정 파라미터 (Hard Example에 더 큰 가중치 부여)
+        self.alpha = alpha
+        self.gamma = gamma
         self.ignore_index = ignore_index
 
     def focal_coeff(self, pred: Tensor, label: Tensor, epsilon: float = 1e-6):
@@ -81,25 +81,19 @@ class FocalLoss(nn.Module):
         """
         assert pred.size() == label.size()
 
-        # Predicted probabilities의 log (안정성을 위해 epsilon 추가)
-        pred = torch.clamp(pred, epsilon, 1.0 - epsilon)  # 값 안정화
+        pred = torch.clamp(pred, epsilon, 1.0 - epsilon)
         log_pred = torch.log(pred)
 
-        # Focal Loss의 핵심 가중치 부분: (1 - p)^gamma
         focal_weight = (1 - pred) ** self.gamma
-
-        # Cross-Entropy Loss 계산
         ce_loss = -(label * log_pred)
-
-        # Focal Loss 계산: (alpha * focal_weight * Cross-Entropy)
         loss = self.alpha * focal_weight * ce_loss
+
         return loss.mean()
 
     def multiclass_focal_coeff(self, pred: Tensor, label: Tensor):
         """
         Input -> pred: [batch, num_classes, height, width], label: [batch, height, width]
         """
-
         # One-hot encode label: [batch, height, width] -> [batch, num_classes, height, width]
         label_one_hot = nn.functional.one_hot(label, num_classes=pred.size(1)).permute(0, 3, 1, 2).float()
 
@@ -122,7 +116,7 @@ class FocalLoss(nn.Module):
         """
         Input ->  pred: [batch, num_classes, height, width], label: [batch, height, width]
         """
-        pred = torch.softmax(pred, dim=1)  # 다중 클래스 확률로 변환
+        pred = torch.softmax(pred, dim=1)
         focal_loss = self.multiclass_focal_coeff(pred, label)
 
         return focal_loss

@@ -3,7 +3,7 @@ import torch
 from my_datasets.dataset import CustomDataset
 from torch.utils.data import DataLoader
 from models.unet.unet import UNet
-from utils.loss import DiceLoss
+from utils.loss import DiceLoss, FocalLoss
 from trainer import Trainer
 
 if __name__=="__main__":
@@ -35,6 +35,7 @@ if __name__=="__main__":
     model = UNet(3, num_classes=(TOTAL_NUM_CLASSES)).to(device)
 
     criterion = DiceLoss(ignore_index=IGNORE_CLASS_IDS)
+    # criterion = FocalLoss(ignore_index=IGNORE_CLASS_IDS)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100, eta_min=0.000001)
 

@@ -3,6 +3,7 @@ import torch
 from tqdm import tqdm
 from utils.visaulization import save_samples
 from utils.metrics import mIoU, dice_score
+from torch.utils.tensorboard import SummaryWriter
 
 class Trainer():
     def __init__(self,
@@ -36,13 +37,15 @@ class Trainer():
         self.checkpoints = []
         self.device = device
 
+        self.writer = SummaryWriter(log_dir="./tensorboard_logs")
+
     def train(self, epochs=10):
         for epoch in range(epochs):
             print(f"Epoch {epoch + 1}/{epochs}")
             self.model.train()
             running_loss = 0.0
             for i, batch in enumerate(tqdm(self.trainloader,  desc="Training")):
-                images, labels = batch
+                images, labels, file_names = batch
                 images = images.to(self.device)
                 labels = labels.to(self.device)
 
@@ -58,6 +61,7 @@ class Trainer():
             avg_train_loss = running_loss / len(self.trainloader)
             print(f"Average Training Loss: {avg_train_loss:.4f}")
 
+            self.writer.add_scalar("Loss/Train", avg_train_loss, epoch)
 
             self.model.eval()
             val_loss = 0.0
@@ -66,7 +70,7 @@ class Trainer():
             max_dsc = 0.0
             with torch.no_grad():
                 for idx, batch in enumerate(tqdm(self.validloader, desc="Validation")):
-                    images, labels = batch
+                    images, labels, file_names = batch
                     images = images.to(self.device)
                     labels = labels.to(self.device)
 
@@ -84,7 +88,7 @@ class Trainer():
                     if batch_dsc > max_dsc:
                         print(f"Best DSC: {batch_dsc:.4f} -- Evaluation samples are saved in {self.output_dir}")
                         max_dsc = batch_dsc
-                        save_samples(images=images, labels=labels, outputs=outputs,batch_index=idx * self.batch_size + epoch,
+                        save_samples(images=images, labels=labels, outputs=outputs, file_names= file_names, batch_index=idx * self.batch_size + epoch,
                                      output_dir=self.output_dir, ignore_classids=self.ignore_index)
 
 
@@ -94,7 +98,13 @@ class Trainer():
             print(f"Average Validation Loss: {avg_val_loss:.4f}")
             print(f"Mean IoU: {avg_miou:.4f}, Mean DSC: {avg_dsc:.4f}")
 
+            self.writer.add_scalar("Loss/Validation", avg_val_loss, epoch)
+            self.writer.add_scalar("Metrics/mIoU", avg_miou, epoch)
+            self.writer.add_scalar("Metrics/DSC", avg_dsc, epoch)
+
             if self.scheduler != None:
+                current_lr = self.scheduler.get_last_lr()[0]
+                self.writer.add_scalar("Learning Rate", current_lr, epoch)
                 self.scheduler.step(val_loss)
 
             self.save_checkpoint(epoch, val_loss)

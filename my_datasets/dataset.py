@@ -60,7 +60,6 @@ class CustomDataset(Dataset):
 
         original_image = cv2.imread(image_path)
         label_mask = cv2.imread(label_path, cv2.IMREAD_GRAYSCALE) # 모든 class 다 있음[0~255 사이](pixel value = class id)
-        original_label_mask = label_mask.copy()
 
         transformed = self.transform(image=original_image, mask=label_mask)
         image = transformed['image']
@@ -69,9 +68,9 @@ class CustomDataset(Dataset):
         image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0  # (H, W, C) -> (C, H, W)
         label_mask = torch.from_numpy(label_mask).long()
 
-        original_image_rgb = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
+        file_name = os.path.basename(image_path)
 
-        return image, label_mask
+        return image, label_mask, file_name
 
 
 class CustomCOCODataset(Dataset):
