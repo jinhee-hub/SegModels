@@ -15,7 +15,7 @@ if __name__=="__main__":
     IGNORE_CLASS_IDS = [0,1] # 배경과 class1은 제외
     NUM_EPOCHS = 5000
     LEARNING_RATE = 5e-5
-    load_model = "./checkpoints/maskformer/best_model.pt"
+    load_model = "./checkpoints/blackhead_unet/checkpoint_27.pth"
     model_output_dir = "./checkpoints/blackhead_unet"
     os.makedirs(model_output_dir, exist_ok=True)
     output_dir = "output"
@@ -43,4 +43,8 @@ if __name__=="__main__":
                       criterion=criterion, optimizer=optimizer, scheduler=scheduler, output_dir=output_dir,
                       model_output_dir = model_output_dir, ignore_index=IGNORE_CLASS_IDS, device=device)
 
+    if load_model !=None:
+        trainer.load_checkpoint(load_model)
+
     trainer.train(epochs=NUM_EPOCHS)
+

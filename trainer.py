@@ -154,11 +154,12 @@ class Trainer():
         }
         torch.save(state, checkpoint_path)
 
-    def load_checkpoint(self, filepath, epoch):
-        checkpoint = torch.load(filepath)
-        self.model.load_state_dict(checkpoint['state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer'])
-        # start_epoch = checkpoint['epoch']
-        start_epoch = epoch
-        print(f"Loaded checkpoint from epoch {start_epoch}")
-        return start_epoch
+    def load_checkpoint(self, filepath):
+        checkpoint = torch.load(filepath, map_location=self.device)  # 체크포인트 로드
+        if 'state_dict' in checkpoint:
+            self.model.load_state_dict(checkpoint['state_dict'])
+            if 'optimizer' in checkpoint:
+                self.optimizer.load_state_dict(checkpoint['optimizer'])
+            print(f"Loaded checkpoint from {filepath}")
+        else:
+            raise ValueError(f"Invalid checkpoint format: {filepath}")

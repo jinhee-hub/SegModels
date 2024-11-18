@@ -37,7 +37,7 @@ def save_samples(images, labels, outputs, file_names, batch_index, output_dir, i
         print(f"Outputs shape: {outputs_np[i].shape}, Predictions unique values: {np.unique(predictions_np[i])}")
 
         for j in range(palette.shape[0]):
-            if j not in ignore_classids:
+            if j not in ignore_classids or j==0:
                 label_color_map[labels_np[i] == j] = palette[j]
                 pred_color_map[predictions_np[i] == j] = palette[j]
 
@@ -45,11 +45,16 @@ def save_samples(images, labels, outputs, file_names, batch_index, output_dir, i
         overlay_label[mask_label] = cv2.addWeighted(
             img_rgb[mask_label], 1 - alpha, label_color_map[mask_label], alpha, 0
         )
-        overlay_pred[mask_pred] = cv2.addWeighted(
-            img_rgb[mask_pred], 1 - alpha, pred_color_map[mask_pred], alpha, 0
-        )
 
-        # 저장
+        if np.any(mask_pred):
+            overlay_pred[mask_pred] = cv2.addWeighted(
+                img_rgb[mask_pred], 1 - alpha, pred_color_map[mask_pred], alpha, 0
+            )
+        else:
+            print(f"Warning: mask_pred is empty for batch {batch_index + i} (default is black).")
+            overlay_pred = img_rgb.copy()
+
+            # 저장
         cv2.imwrite(f"{output_dir}/image_{file_name}", img_rgb)  # image
         # cv2.imwrite(f"{output_dir}/labelmap_{file_name}", label_color_map)       # label map
         # cv2.imwrite(f"{output_dir}/predmap_{file_name}", pred_color_map)   # pred map
